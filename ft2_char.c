@@ -284,10 +284,3 @@ int main(int argc, char** argv)
   free(charToRender);
   return 0;
 }
-
-
-
-
-
-
-
