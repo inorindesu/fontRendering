@@ -15,6 +15,10 @@
  * as published by Sam Hocevar. See the COPYING file for more details.
  */
 
+#include <iconv.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -26,12 +30,109 @@ void render_glyph_to_stdout(FT_GlyphSlot slot)
    */
 }
 
+/*
+ * Convert the first character of a given utf8 string into a utf32
+ * character.
+ */
+#define UTF32_BUF_LEN 8  /* 4 for BOM, 4 for character itself*/
+unsigned int utf8_to_utf32(char* utf8)
+{
+  iconv_t t;
+  char* buf;
+  char* originalBuf;
+  unsigned int ret;
+  int converted;
+  size_t inSize;
+  size_t outSize;
+  int i;
+
+  /*
+   * from utf8 to utf32
+   *
+   * Using 'utf-32' as the first parameter would cause iconv write BOM
+   * into output stream.
+   */
+  t = iconv_open("UTF-32", "UTF-8");
+  if (t == (iconv_t) -1)
+    {
+      fprintf(stderr, "ERROR: cannot create converter.");
+      return 0;
+    }
+
+  buf = malloc(UTF32_BUF_LEN);
+  memset(buf, 0, UTF32_BUF_LEN);
+
+  originalBuf = buf;
+  inSize = strlen(utf8);
+  outSize = UTF32_BUF_LEN;
+  converted = iconv(t, &utf8, &inSize, &buf, &outSize);
+
+  if (converted == (size_t) -1)
+    {
+      if (errno != E2BIG)
+        {
+          if (errno == EILSEQ)
+            {
+              fprintf(stderr, "WARNING: EILSEQ\n");
+            }
+          else if (errno == EINVAL)
+            {
+              fprintf(stderr, "WARNING: EINVAL\n");
+            }
+          else
+            {
+              fprintf(stderr, "WARNING: converted character count is %d\n", converted);
+            }
+        }
+    }
+
+  /* Ignore the BOM */
+  ret = ((unsigned int*)originalBuf)[1];
+  free(originalBuf);
+  return ret;
+}
+
+/*
+ * Fetch first utf8 char from a utf8 string. Returned char array
+ * should be freed by free() after their jobs done.
+ *
+ * UTF-8 rule: see http://zh.wikipedia.org/wiki/UTF-8
+ */
+char* first_utf8_code_new(char* str)
+{
+  char c = str[0];
+  char* buf;
+  int codeLength;
+
+  if (c & 0b10000000 == 0)
+    {
+      codeLength = 1;
+    }
+  else if (c & 0b11100000 == 0b11000000)
+    {
+      codeLength = 2;
+    }
+  else if (c & 0b11110000 == 0b11100000)
+    {
+      codeLength = 3;
+    }
+  else 
+    {
+      codeLength = 4;
+    }
+  buf = malloc(codeLength + 1);
+  memcpy(buf, str, codeLength);
+  buf[codeLength] = '\0';
+  return buf;
+}
+
 int main(int argc, char** argv)
 {
   FT_Library lib;
   FT_Face face;
   FT_Error err;
-  char charToRender;
+  char* charToRender;
+  unsigned int utf32CharToRender;
   int i;
   unsigned int glyphIndex;
   FT_GlyphSlot glyphSlot;
@@ -42,8 +143,6 @@ int main(int argc, char** argv)
       return 0;
     }
 
-  charToRender = argv[1][0];
-  
   /* Initiate freetype library */
   err = FT_Init_FreeType(&lib);
   if (err)
@@ -100,8 +199,11 @@ int main(int argc, char** argv)
    * charToRender should be a utf-32 character
    * if default charmap is a unicode charmap
    */
-  fprintf(stderr, "Try loading character %c\n", charToRender);
-  glyphIndex = FT_Get_Char_Index(face, charToRender);
+  charToRender = first_utf8_code_new(argv[1]);
+  utf32CharToRender = utf8_to_utf32(charToRender);
+  
+  fprintf(stderr, "Try loading character %s (UTF32 code: %u)\n", charToRender, utf32CharToRender);
+  glyphIndex = FT_Get_Char_Index(face, utf32CharToRender);
   if (glyphIndex == 0)
     {
       fprintf(stderr, "The character cannot be indexed.\n");
@@ -109,7 +211,7 @@ int main(int argc, char** argv)
     }
   else
     {
-      fprintf(stderr, "Glyph index of %c is %d\n", charToRender, glyphIndex);
+      fprintf(stderr, "Glyph index of %s is %d\n", charToRender, glyphIndex);
       err = FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT /*0*/);
       if (err)
         {
@@ -124,12 +226,15 @@ int main(int argc, char** argv)
           fprintf(stderr, "ERROR: when rendering glyph\n");
           return -1;
         }
+
+      fprintf(stderr, "Glyph information of character %s:", charToRender);
       
       fprintf(stderr, "Rendering PNG with cairo.\n");
       render_glyph_to_stdout(glyphSlot);
     }
   FT_Done_Face(face);
   FT_Done_FreeType(lib);
+  free(charToRender);
   return 0;
 }
 
