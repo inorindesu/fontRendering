@@ -19,15 +19,62 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <cairo.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+cairo_status_t my_writer(void* closure, const unsigned char *data, unsigned int length)
+{
+  if (fwrite(data, 1, length, stdout) != length)
+    {
+      fprintf(stderr, "ERROR: writing error");
+      return CAIRO_STATUS_WRITE_ERROR;
+    }
+  return CAIRO_STATUS_SUCCESS;
+}
+
+/*
+ * Render FreeType glyph into PNG file, in ARGB format, delivering to stdout.
+ * 
+ * Change the following defines to change rendering color.
+ */
+# define RED (192)
+# define GREEN (255)
+# define BLUE (192)
 void render_glyph_to_stdout(FT_GlyphSlot slot)
 {
+  cairo_surface_t* img;
+  unsigned char* imgData;
+  FT_Bitmap* bitmap;
+  int i;
+  
+  bitmap = &slot->bitmap;
   /*
-   * The PNG file would be rendered in RGBA color format.
+   * Prepare image data for cairo PNG
+   *
+   * ARGB32 in cairo is in pre-multiplied alpha format
+   * The byte sequences are: BGRA
    */
+
+  imgData = malloc(bitmap->width * bitmap->rows * 4);
+  for(i = 0; i < bitmap->width * bitmap->rows; i++)
+    {
+      int imgIndex = i * 4;
+      unsigned char alpha = bitmap->buffer[i];
+      imgData[imgIndex] = BLUE * alpha / 255;/*b*/
+      imgData[imgIndex + 1] = GREEN * alpha / 255; /*g*/
+      imgData[imgIndex + 2] = RED * alpha / 255; /*r*/
+      imgData[imgIndex + 3] = alpha; /*a*/
+    }
+
+  /*
+   * create a surface from the data
+   */
+  img = cairo_image_surface_create_for_data(imgData, CAIRO_FORMAT_ARGB32, bitmap->width, bitmap->rows, bitmap->width * 4);
+  cairo_surface_write_to_png_stream(img, my_writer, NULL);
+  cairo_surface_destroy(img);
+  free(imgData);
 }
 
 /*
