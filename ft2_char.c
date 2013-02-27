@@ -68,11 +68,12 @@ void render_glyph_to_stdout(FT_GlyphSlot slot)
       imgData[imgIndex + 3] = alpha; /*a*/
     }
 
-  /*
-   * create a surface from the data
-   */
+  /* create a surface from the data */
   img = cairo_image_surface_create_for_data(imgData, CAIRO_FORMAT_ARGB32, bitmap->width, bitmap->rows, bitmap->width * 4);
+  /* write png data to stdout with my_writer function*/
   cairo_surface_write_to_png_stream(img, my_writer, NULL);
+
+  /* cleanup */
   cairo_surface_destroy(img);
   free(imgData);
 }
