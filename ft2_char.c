@@ -65,17 +65,20 @@ int main(int argc, char** argv)
       return -1;
     }
   
-  /* Show font information*/
-  printf("Font loaded from %s.\n", argv[2]);
-  printf("Family name: %s.\n", face->family_name);
-  printf("Style name: %s.\n", face->style_name);
-  printf("# of faces in this font: %d\n", face->num_faces);
-  printf("BBox: x: (%d, %d), y: (%d, %d)\n", face->bbox.xMin, face->bbox.xMax,
-         face->bbox.yMin, face->bbox.yMax);
-  printf("Units per EM: %d\n", face->units_per_EM);
-  printf("Ascender: %d\n", face->ascender);
-  printf("Descender: %d\n", face->descender);
-  printf("(Line) Height: %d\n", face->height);
+  /*
+   * Show font information
+   * Direct them to stderr, since we write final PNG image into stdout.
+   */
+  fprintf(stderr, "Font loaded from %s.\n", argv[2]);
+  fprintf(stderr, "Family name: %s.\n", face->family_name);
+  fprintf(stderr, "Style name: %s.\n", face->style_name);
+  fprintf(stderr, "# of faces in this font: %d\n", face->num_faces);
+  fprintf(stderr, "BBox: x: (%d, %d), y: (%d, %d)\n", face->bbox.xMin, face->bbox.xMax,
+          face->bbox.yMin, face->bbox.yMax);
+  fprintf(stderr, "Units per EM: %d\n", face->units_per_EM);
+  fprintf(stderr, "Ascender: %d\n", face->ascender);
+  fprintf(stderr, "Descender: %d\n", face->descender);
+  fprintf(stderr, "(Line) Height: %d\n", face->height);
   
   /*
    * Set size of the font to width or height
@@ -97,16 +100,16 @@ int main(int argc, char** argv)
    * charToRender should be a utf-32 character
    * if default charmap is a unicode charmap
    */
-  printf("Try loading character %c\n", charToRender);
+  fprintf(stderr, "Try loading character %c\n", charToRender);
   glyphIndex = FT_Get_Char_Index(face, charToRender);
   if (glyphIndex == 0)
     {
-      printf("The character cannot be indexed.\n");
+      fprintf(stderr, "The character cannot be indexed.\n");
       return 0;
     }
   else
     {
-      printf("Glyph index of %c is %d\n", charToRender, glyphIndex);
+      fprintf(stderr, "Glyph index of %c is %d\n", charToRender, glyphIndex);
       err = FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT /*0*/);
       if (err)
         {
@@ -122,7 +125,7 @@ int main(int argc, char** argv)
           return -1;
         }
       
-      printf("Rendering PNG with cairo.");
+      fprintf(stderr, "Rendering PNG with cairo.\n");
       render_glyph_to_stdout(glyphSlot);
     }
   FT_Done_Face(face);
