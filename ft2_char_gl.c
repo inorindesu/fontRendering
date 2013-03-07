@@ -37,7 +37,6 @@ typedef unsigned char uchar;
 uint chars[CHARCOUNT] = {TA, THA, CANCER};
 GLuint charTextures[CHARCOUNT];
 int curTextureIdx = 0;
-GLFWwindow win;
 
 /* fragment shader */
 const char* vertexShader = "#version 120\n"
@@ -295,6 +294,7 @@ GLFWwindow create_window()
 
 int main()
 {
+  GLFWwindow win;
   int curW = DEFAULT_WIDTH;
   int curH = DEFAULT_HEIGHT;
   int lastW = 0;
