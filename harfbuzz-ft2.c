@@ -184,11 +184,8 @@ int main(int argc, char** argv)
   
   /*
    * Rendering
-   * Bug: 
-   * ’alif + lām + U+0651 ARABIC SHADDA + U+0670 ARABIC LETTER SUPERSCRIPT ALEF + hā’
-   * is not rendered properly.
-   * 
-   * Also by the result above, font height is not a good measure for bounding box in arabic.
+   * Bug:
+   * Font height is not a good measure for bounding box in arabic.
    * (May use pseudorendering)
    */
   uchar* imgData = calloc(1, w * h * 4);
