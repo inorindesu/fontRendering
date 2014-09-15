@@ -13,7 +13,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <GL/glew.h>
-#include <GL/glfw3.h>
+#include <GLFW/glfw3.h>
 
 typedef unsigned int uint;
 typedef unsigned char uchar;
@@ -159,7 +159,7 @@ void show_gl_linking_error(GLuint programHandle)
   free(buffer);
 }
 
-void clean_up(GLFWwindow win)
+void clean_up(GLFWwindow* win)
 {
   glfwDestroyWindow(win);
   glfwTerminate();
@@ -263,7 +263,7 @@ void setup_gl(GLuint* vbHandle, GLuint* uvHandle, GLuint* idxHandle,
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(vboIdx), vboIdx, GL_STATIC_DRAW);
 }
 
-void key_event(GLFWwindow win, int key, int action)
+void key_event(GLFWwindow* win, int key, int scan, int action, int mods)
 {
   if (action != GLFW_RELEASE)
     return;
@@ -281,20 +281,20 @@ void key_event(GLFWwindow win, int key, int action)
     }
 }
 
-GLFWwindow create_window()
+GLFWwindow* create_window()
 {
-  GLFWwindow win;
+  GLFWwindow* win;
 
   glfwInit();
-  win = glfwCreateWindow(DEFAULT_WIDTH, DEFAULT_HEIGHT, GLFW_WINDOWED, "Draw text", NULL);
-  glfwSetKeyCallback(key_event);
+  win = glfwCreateWindow(DEFAULT_WIDTH, DEFAULT_HEIGHT, "Draw text", NULL, NULL);
+  glfwSetKeyCallback(win, key_event);
   glfwMakeContextCurrent(win);
   return win;
 }
 
 int main()
 {
-  GLFWwindow win;
+  GLFWwindow* win;
   int curW = DEFAULT_WIDTH;
   int curH = DEFAULT_HEIGHT;
   int lastW = 0;
@@ -343,7 +343,7 @@ int main()
 
       glfwSwapBuffers(win);
       glfwPollEvents();
-      if (glfwGetWindowParam(win, GLFW_CLOSE_REQUESTED))
+      if (glfwWindowShouldClose(win))
         {
           break;
         }

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 project(fontRender)
 find_package(PkgConfig)
-pkg_check_modules(PC REQUIRED libpng15 freetype2 harfbuzz cairo gl glew glfw3)
+pkg_check_modules(PC REQUIRED libpng freetype2 harfbuzz cairo gl glew glfw3)
 
 list(APPEND CMAKE_C_FLAGS "-std=c99")
 
